@@ -1,0 +1,63 @@
+name: ClassForm CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Получение исходного кода
+        uses: actions/checkout@v4
+
+      - name: Установка .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Восстановление зависимостей
+        run: dotnet restore ./ClassForm/ClassForm.sln
+
+      - name: Сборка решения
+        run: dotnet build ./ClassForm/ClassForm.sln --configuration Release --no-restore
+
+  test:
+    needs: build
+    runs-on: windows-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [ Debug, Release ]
+
+    steps:
+      - name: Получение исходного кода
+        uses: actions/checkout@v4
+
+      - name: Установка .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Запуск модульных тестов
+        run: dotnet test ./ClassForm/UnitTest/UnitTest.csproj --configuration ${{ matrix.configuration }}
+
+  analyze:
+    needs: build
+    runs-on: windows-latest
+
+    steps:
+      - name: Получение исходного кода
+        uses: actions/checkout@v4
+
+      - name: Установка .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Проверка форматирования
+        run: dotnet format ./ClassForm/ClassForm.sln whitespace --verify-no-changes --no-restore
