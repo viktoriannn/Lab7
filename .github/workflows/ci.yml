@@ -1,26 +1,11 @@
-name: Sequential Workflow
+name: Ex1
 
 on: 
-  push: 
-    branches: [main]
   pull_request:
     branches: [main]
 
 jobs:
   build:
-    runs-on: windows-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
-      - name: Build project
-        run: dotnet build ./ClassForm/ClassForm.sln --configuration Release
-
-  test:
-    needs: build
     runs-on: windows-latest
     strategy:
       matrix: 
@@ -32,18 +17,14 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
+      - name: Build project
+        run: dotnet build ./ClassForm/ClassForm.sln --configuration ${{ matrix.configuration }}
       - name: Run tests
-        run: dotnet test ./ClassForm/TUnitTest/TUnitTest.csproj --configuration ${{ matrix.configuration }}
-
-  analyze:
-    needs: build
-    runs-on: windows-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        run: dotnet test ./ClassForm/TUnitTest/TUnitTest.csproj --configuration ${{ matrix.configuration }} --no-build
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
         with:
-          dotnet-version: '9.0.x'
-      - name: Run code analysis
-        run: dotnet tool install -g dotnet-format && dotnet format ./ClassForm/ClassForm.sln
+          name: ClassForm-${{ matrix.configuration }}
+          path: ./ClassForm/ClassForm/bin/${{ matrix.configuration }}/
+          if-no-files-found: error
+          retention-days: 7
